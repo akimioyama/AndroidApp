@@ -21,6 +21,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -37,17 +38,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<HashMap<String, String>> fioAndNumber = new ArrayList<>();
     HashMap<String, String> map;
+    JSONArray jsonArray;
     int idItem = -1;
+    String ididid;
 
-//    String api = "http://jsonplaceholder.typicode.com/todos/1";
-    String api = "http://10.0.2.2:7866/api/qwe";
-//    String api = "https://jsonplaceholder.typicode.com/photos";
+    String api = "http://192.168.0.82:7866/api/qwe";
 
 
     @Override
@@ -58,15 +60,15 @@ public class MainActivity extends AppCompatActivity {
         ListView listview = findViewById(R.id.listview1);
         Button btnAddMain = findViewById(R.id.btnAddMain);
 
-        map = new HashMap<>();
-        map.put("Name", "Антон");
-        map.put("Tel", "79209837611");
-        fioAndNumber.add(map);
-
-        map = new HashMap<>();
-        map.put("Name", "Дима");
-        map.put("Tel", "79209289848");
-        fioAndNumber.add(map);
+//        map = new HashMap<>();
+//        map.put("Name", "Антон");
+//        map.put("Tel", "79209837611");
+//        fioAndNumber.add(map);
+//
+//        map = new HashMap<>();
+//        map.put("Name", "Дима");
+//        map.put("Tel", "79209289848");
+//        fioAndNumber.add(map);
 
         SimpleAdapter adapter = new SimpleAdapter(this, fioAndNumber, android.R.layout.simple_list_item_2,
                 new String[]{"Name", "Tel"},
@@ -82,11 +84,12 @@ public class MainActivity extends AppCompatActivity {
                             String name = intent.getStringExtra("name");
                             String tel = intent.getStringExtra("tel");
                             String id = intent.getStringExtra("id");
+                            String api = intent.getStringExtra("api");
                             if(Objects.equals(id, "add")){
-                                map = new HashMap<>();
-                                map.put("Name", name);
-                                map.put("Tel", tel);
-                                fioAndNumber.add(map);
+                                getPerson1(api);
+                                fioAndNumber.clear();
+                                fioAndNumber = new ArrayList<>();
+                                getPerson();
                                 adapter.notifyDataSetChanged();
                             }
                             else if (Objects.equals(id, "put")){
@@ -117,8 +120,17 @@ public class MainActivity extends AppCompatActivity {
                 temp.put("Tel", fioAndNumber.get(position).get("Tel"));
                 idItem = position;
 
+                try {
+                    JSONObject jsonObject = jsonArray.getJSONObject(position);
+                    int idid = jsonObject.getInt("id");
+                    ididid = String.valueOf(idid);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
 
                 Intent zzz = new Intent(MainActivity.this, put_and_delet.class);
+                zzz.putExtra("ididid", ididid);
                 zzz.putExtra("name", fioAndNumber.get(position).get("Name"));
                 zzz.putExtra("tel", fioAndNumber.get(position).get("Tel"));
                 mStartForResult.launch(zzz);
@@ -127,10 +139,14 @@ public class MainActivity extends AppCompatActivity {
 
 
         getPerson();
+        adapter.notifyDataSetChanged();
+
+
 //        new getPersonAPI().execute(api);
     }
 
     private void getPerson() {
+
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest stringRequest = new StringRequest(Request.Method.GET, api,
                 new Response.Listener<String>() {
@@ -138,19 +154,41 @@ public class MainActivity extends AppCompatActivity {
                     public void onResponse(String response) {
                         Log.e("api", "onResponse: " + response.toString());
                         try {
-                            JSONArray array = new JSONArray(response);
+                            JSONArray  array = new JSONArray(response);
                             for (int i = 0; i < array.length(); i++){
                                 JSONObject singleObject = array.getJSONObject(i);
+                                map = new HashMap<>();
+                                map.put("Name", singleObject.getString("name"));
+                                map.put("Tel", singleObject.getString("number"));
+                                fioAndNumber.add(map);
                             }
+                            jsonArray = array;
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
+
 
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e("api", "onErrorResponse: " + error.getLocalizedMessage());
+                Log.e("api", "onErrorResponse: " + error.getLocalizedMessage() + error.toString());
+            }
+        });
+        queue.add(stringRequest);
+    }
+    private void getPerson1(String api) {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, api,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.e("api", "onResponse: " + response.toString());
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("api", "onErrorResponse: " + error.getLocalizedMessage() + error.toString());
             }
         });
         queue.add(stringRequest);
